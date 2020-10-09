@@ -3,11 +3,11 @@ const mongoose = require('mongoose');
 // Schema: decsribes the content of a database document
 const ProductSchema = new mongoose.Schema(
     {
-        brand: {
+        courseName: {
             type: String,
             required: true
         },
-        model: {
+        licence: {
             type: String,
             required: true
         },
