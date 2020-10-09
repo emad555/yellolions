@@ -3,6 +3,9 @@ const express = require('express');
 // Assign to server the express library
 const server = express();
 
+// Import dotenv
+const dotenv = require("dotenv");
+dotenv.config();
 
 // Import body-parser
 const bodyParser = require('body-parser');
@@ -10,7 +13,11 @@ const bodyParser = require('body-parser');
 // Import cors
 const cors = require('cors');
 
+//Import passport
 
+const passport = require("passport");
+const initPassportStrategy = require("./config/passport");
+initPassportStrategy(passport);
 
 // Import cloudinary
 const cloudinary = require('cloudinary');
@@ -28,10 +35,11 @@ const expressFormData = require('express-form-data');
 // Import mongoose (for connecting MongoDB)
 const mongoose = require('mongoose');
 const ProductRoutes = require('./routes/ProductRoutes');
+const UserRoutes = require("./routes/UserRoutes");
 
 
-
-const dbURL = "mongodb+srv://emad:emad@cluster0.hqtag.mongodb.net/users?retryWrites=true&w=majority";
+//const dbURL = "mongodb+srv://emad:emad@cluster0.hqtag.mongodb.net/users?retryWrites=true&w=majority";
+const dbURL = process.env.DB_URL;
 
 mongoose
     .connect(dbURL, {useNewUrlParser: true, useUnifiedTopology: true})
@@ -51,6 +59,7 @@ mongoose
 server.use(bodyParser.urlencoded( {extended: false} ));
 server.use(bodyParser.json());
 server.use(cors());
+server.use(passport.initialize());
 server.use(expressFormData.parse());
 
 server.get(
@@ -63,12 +72,37 @@ server.get(
     }
 );
 
+server.get(
+    "/profile",
+    passport.authenticate("jwt", { session: false }),
+    (req, res) => {
+      res.send(
+        `<h1>Your Profile</h1> 
+      <p>Your first name:   ${req.user.firstName} </p> 
+      <p>Your last name:   ${req.user.lastName}  </p>`
+      );
+    }
+  );
+  
+  server.get(
+    "/settings",
+    passport.authenticate("jwt", { session: false }),
+    (req, res) => {
+      res.send(
+        `<h1>Account settings</h1>
+      <p>Name: ${req.user.firstName}</p>
+      <p>Email: ${req.user.email}</p>
+      `
+      );
+    }
+  );
+  
 
 server.use(
     '/products',
     ProductRoutes
 )
-
+server.use("/users", UserRoutes);
 
 
 server.get(
