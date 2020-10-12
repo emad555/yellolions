@@ -8,6 +8,7 @@ const cloudinary = require("cloudinary");
 const secret = process.env.SECRET;
 
 const UserModel = require("../models/UserModel");
+const passport = require("passport");
 
 router.post("/register", (req, res) => {
   const formData = {
@@ -118,7 +119,21 @@ router.post("/login", (req, res) => {
 router.post("/update", (req, res) => {
   updateUser(req, res);
 });
-
+router.post(
+  "/find",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    UserModel.find({ _id: req.user.id })
+      .then((document) => {
+        res.send(document);
+      })
+      .catch((e) => {
+        console.log("e", e);
+        res.send({ e: e });
+      });
+  }
+);
+/*
 const updateUser = (req, res) => {
   UserModel.findOne({ _id: req.body.id }, (err, doc) => {
     doc.firstName = req.body.firstName;
@@ -128,7 +143,7 @@ const updateUser = (req, res) => {
     doc.save(res.send({ msg: "Changes saved" }));
   });
 };
-
+*/
 router.post("/image-upload", (req, res) => {
   const files = Object.values(req.files);
 
