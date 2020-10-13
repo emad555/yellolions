@@ -3,6 +3,9 @@ const express = require('express');
 // Assign to server the express library
 const server = express();
 
+
+server.set('view engine', 'ejs')
+
 // Import dotenv
 const dotenv = require("dotenv");
 dotenv.config();
@@ -72,6 +75,8 @@ server.get(
     }
 );
 
+
+
 server.get(
     "/profile",
     passport.authenticate("jwt", { session: false }),
@@ -103,6 +108,8 @@ server.use(
     ProductRoutes
 )
 server.use("/users", UserRoutes);
+
+server.use("/posts", require("./routes/PostRoutes"))
 
 
 server.get(
