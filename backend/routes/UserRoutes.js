@@ -116,9 +116,7 @@ router.post("/login", (req, res) => {
   }
 });
 
-router.post("/update", (req, res) => {
-  updateUser(req, res);
-});
+
 router.post(
   "/find",
   passport.authenticate("jwt", { session: false }),
@@ -133,6 +131,73 @@ router.post(
       });
   }
 );
+router.post(
+  "/update",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res) => {
+    const formData = {
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      email: req.body.email,
+      // password: req.body.password, // will change with bcrypt
+      // photoURL: '' // will be assigned by Cloudinary
+    };
+
+    // Only if a file was sent
+    if (Object.values(req.files).length > 0) {
+      // Upload their photo to Cloudinary
+      const files = Object.values(req.files); // [file, file, file]
+      await cloudinary.uploader.upload(
+        files[0].path,
+        (cloudinaryResult, err) => {
+          console.log("cloudinaryResult", cloudinaryResult);
+          // Update the formData
+          formData.photoURL = cloudinaryResult.url;
+        }
+      );
+    }
+
+    // If the user changes the password
+    if (req.body.password) {
+      formData.password = req.body.password;
+
+      // Encrypt their password
+      bcrypt.genSalt((err, salt) => {
+        bcrypt.hash(formData.password, salt, (err, encryptedPassword) => {
+          // Update the formData
+          formData.password = encryptedPassword;
+
+          // Find the user with the id in payload and
+          // Update the user's document in the database
+          UserModel.findByIdAndUpdate(req.user.id, {
+            $set: formData,
+          })
+            .then((document) => {
+              res.send(document);
+            })
+            .catch((e) => {
+              console.log("e", e);
+              res.send({ e: e });
+            });
+        });
+      });
+    }
+
+    // Otherwise, skip encrypting the password
+    else {
+      UserModel.findByIdAndUpdate(req.user.id, {
+        $set: formData,
+      })
+        .then((document) => {
+          res.send(document);
+        })
+        .catch((e) => {
+          console.log("e", e);
+          res.send({ e: e });
+        });
+    }
+  }
+);
 /*
 const updateUser = (req, res) => {
   UserModel.findOne({ _id: req.body.id }, (err, doc) => {
@@ -143,7 +208,7 @@ const updateUser = (req, res) => {
     doc.save(res.send({ msg: "Changes saved" }));
   });
 };
-*/
+
 router.post("/image-upload", (req, res) => {
   const files = Object.values(req.files);
 
@@ -152,5 +217,5 @@ router.post("/image-upload", (req, res) => {
     res.send(result);
   });
 });
-
+*/
 module.exports = router;
